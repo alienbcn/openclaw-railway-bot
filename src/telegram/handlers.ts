@@ -1,6 +1,8 @@
 import { Context } from "grammy";
 import { openRouterClient, type OpenRouterMessage } from "../llm/openrouter.js";
 import { telegramBot } from "./bot.js";
+import serperService from "../llm/serper.js";
+import { playwrightMCP } from "../mcp/playwright.js";
 
 const conversationContexts: Map<number, OpenRouterMessage[]> = new Map();
 
@@ -30,7 +32,9 @@ export async function registerCommandHandlers(): Promise<void> {
       "/start - Iniciar conversación\n" +
       "/help - Ver esta ayuda\n" +
       "/clear - Limpiar historial de conversación\n" +
-      "/status - Ver estado del bot\n\n" +
+      "/status - Ver estado del bot\n" +
+      "/bitcoin - Obtener precio actual de Bitcoin\n" +
+      "/news - Obtener noticias principales de El País\n\n" +
       "También puedes escribir mensajes normales para conversar."
     );
   });
@@ -53,6 +57,56 @@ export async function registerCommandHandlers(): Promise<void> {
       `🤖 Version: 1.0.0\n` +
       `🚀 Despliegue: Railway`
     );
+  });
+
+  // /bitcoin - Obtener precio actual de Bitcoin usando Serper
+  bot.command("bitcoin", async (ctx) => {
+    try {
+      await ctx.reply("⏳ Buscando precio de Bitcoin...");
+
+      const bitcoinData = await serperService.getBitcoinPrice();
+
+      const message =
+        `💰 <b>Precio de Bitcoin</b>\n\n` +
+        `${bitcoinData.price}\n\n` +
+        `🔗 <a href="${bitcoinData.source}">Fuente</a>\n` +
+        `⏰ ${new Date(bitcoinData.timestamp).toLocaleString("es-ES")}`;
+
+      await ctx.reply(message, { parse_mode: "HTML" });
+    } catch (error) {
+      console.error("Error obteniendo precio de Bitcoin:", error);
+      await ctx.reply(
+        "❌ Error obteniendo el precio de Bitcoin. Asegúrate de que SERPER_API_KEY esté configurada."
+      );
+    }
+  });
+
+  // /news - Obtener noticias principales de El País usando Playwright
+  bot.command("news", async (ctx) => {
+    try {
+      await ctx.reply("⏳ Extrayendo noticias de El País...");
+
+      const newsData = await playwrightMCP.scrapeElPais();
+
+      if (newsData.success) {
+        const message =
+          `📰 <b>Noticia Principal - El País</b>\n\n` +
+          `${newsData.headline}\n\n` +
+          `🔗 <a href="${newsData.url}">Leer más</a>\n` +
+          `⏰ ${new Date(newsData.timestamp).toLocaleString("es-ES")}`;
+
+        await ctx.reply(message, { parse_mode: "HTML" });
+      } else {
+        await ctx.reply(
+          `❌ Error: ${newsData.headline}\n\nAsegúrate de tener acceso a internet y que Playwright esté correctamente instalado.`
+        );
+      }
+    } catch (error) {
+      console.error("Error obteniendo noticias:", error);
+      await ctx.reply(
+        "❌ Error extrayendo noticias. Verifica los logs para más detalles."
+      );
+    }
   });
 
   // Manejar mensajes de texto

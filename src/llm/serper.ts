@@ -85,6 +85,38 @@ export class SerperService {
   }
 
   /**
+   * Busca el precio actual de Bitcoin
+   */
+  async getBitcoinPrice(): Promise<{
+    price: string;
+    source: string;
+    timestamp: string;
+  }> {
+    if (!this.apiKey) {
+      throw new Error("SERPER_API_KEY no está configurada");
+    }
+
+    try {
+      const results = await this.searchNiche("precio Bitcoin hoy USD");
+      
+      if (!results || results.length === 0) {
+        throw new Error("No se encontraron resultados para Bitcoin");
+      }
+
+      const firstResult = results[0];
+      
+      return {
+        price: firstResult.snippet,
+        source: firstResult.link,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("Error obteniendo precio de Bitcoin:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Busca con parámetros personalizados
    */
   async searchAdvanced(

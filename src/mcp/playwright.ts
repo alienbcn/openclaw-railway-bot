@@ -3,6 +3,7 @@
  * Permite al bot navegar por internet, extraer datos y realizar clics
  */
 
+import { chromium, Browser, Page } from "playwright";
 import { config } from "../config.js";
 
 export interface BrowserOptions {
@@ -21,6 +22,7 @@ export interface NavigationResult {
 export class PlaywrightMCP {
   private options: BrowserOptions;
   private initialized: boolean = false;
+  private browser: Browser | null = null;
 
   constructor(options: BrowserOptions = {}) {
     this.options = {
@@ -34,8 +36,20 @@ export class PlaywrightMCP {
 
     try {
       console.log("🎭 Inicializando Playwright MCP...");
-      // La inicialización real ocurriría aquí cuando se implemente
-      // Por ahora, preparamos la estructura
+
+      // Configurar argumentos para Railway (contenedor Linux)
+      const browserArgs = [
+        "--no-sandbox", // Requerido para Railway/Docker
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage", // Para evitar problemas de memoria en contenedores
+        "--disable-gpu",
+      ];
+
+      this.browser = await chromium.launch({
+        headless: this.options.headless ?? true,
+        args: browserArgs,
+      });
+
       this.initialized = true;
       console.log("✅ Playwright MCP inicializado");
     } catch (error) {
@@ -49,17 +63,27 @@ export class PlaywrightMCP {
       await this.initialize();
     }
 
+    let page: Page | null = null;
     try {
       console.log(`🌐 Navegando a: ${url}`);
 
-      // Aquí iría la lógica real de navegación con Playwright
-      // Por ahora retornamos una estructura de ejemplo
+      if (!this.browser) {
+        throw new Error("Browser no inicializado");
+      }
+
+      page = await this.browser.newPage();
+
+      // Navegar con timeout
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+
+      const title = await page.title();
+      const content = await page.content();
 
       return {
         success: true,
         url,
-        title: "Página navegada",
-        content: "Contenido extraído",
+        title,
+        content,
         timestamp: new Date(),
       };
     } catch (error) {
@@ -71,6 +95,67 @@ export class PlaywrightMCP {
         content: `Error al navegar: ${error}`,
         timestamp: new Date(),
       };
+    } finally {
+      if (page) {
+        await page.close();
+      }
+    }
+  }
+
+  /**
+   * Extrae la noticia principal de El País
+   */
+  async scrapeElPais(): Promise<{
+    success: boolean;
+    headline: string;
+    url: string;
+    timestamp: string;
+  }> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    let page: Page | null = null;
+    try {
+      if (!this.browser) {
+        throw new Error("Browser no inicializado");
+      }
+
+      page = await this.browser.newPage();
+
+      await page.goto("https://elpais.com", {
+        waitUntil: "domcontentloaded",
+        timeout: 30000,
+      });
+
+      // Extrae el titular principal
+      const headline = await page.evaluate(() => {
+        // Busca el primer titular de noticia en el navegador
+        const headlineEl =
+          document.querySelector("h2") ||
+          document.querySelector("h1") ||
+          document.querySelector("[class*='headline']");
+        return headlineEl?.textContent?.trim() || "No encontrado";
+      }) as string;
+
+      return {
+        success: true,
+        headline,
+        url: "https://elpais.com",
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("Error en El País scraping:", error);
+      return {
+        success: false,
+        headline: `Error: ${error}`,
+        url: "https://elpais.com",
+        timestamp: new Date().toISOString(),
+      };
+    } finally {
+      if (page) {
+        await page.close();
+      }
     }
   }
 
@@ -86,10 +171,19 @@ export class PlaywrightMCP {
     success: boolean;
     message: string;
   }> {
+    let page: Page | null = null;
     try {
-      console.log(`🖱️ Click en selector: ${selector}`);
+      if (!this.browser) {
+        throw new Error("Browser no inicializado");
+      }
 
-      // Aquí iría la lógica real
+      page = await this.browser.newPage();
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+
+      await page.click(selector);
+
+      console.log(`✅ Click ejecutado en ${selector}`);
+
       return {
         success: true,
         message: `Click ejecutado en ${selector}`,
@@ -99,6 +193,10 @@ export class PlaywrightMCP {
         success: false,
         message: `Error al hacer click: ${error}`,
       };
+    } finally {
+      if (page) {
+        await page.close();
+      }
     }
   }
 
@@ -109,10 +207,21 @@ export class PlaywrightMCP {
     success: boolean;
     message: string;
   }> {
+    let page: Page | null = null;
     try {
-      console.log("📝 Completando formulario con campos:", Object.keys(fields));
+      if (!this.browser) {
+        throw new Error("Browser no inicializado");
+      }
 
-      // Aquí iría la lógica real
+      page = await this.browser.newPage();
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+
+      for (const [selector, value] of Object.entries(fields)) {
+        await page.fill(selector, value);
+      }
+
+      console.log("✅ Formulario completado");
+
       return {
         success: true,
         message: "Formulario completado",
@@ -122,13 +231,21 @@ export class PlaywrightMCP {
         success: false,
         message: `Error al completar formulario: ${error}`,
       };
+    } finally {
+      if (page) {
+        await page.close();
+      }
     }
   }
 
   async close(): Promise<void> {
-    console.log("🔒 Cerrando Playwright...");
+    if (this.browser) {
+      await this.browser.close();
+      console.log("🔒 Playwright cerrado");
+    }
     this.initialized = false;
   }
 }
 
 export const playwrightMCP = new PlaywrightMCP();
+
