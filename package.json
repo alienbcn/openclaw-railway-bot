@@ -1,0 +1,32 @@
+{
+  "name": "openclaw-railway-bot",
+  "version": "1.0.0",
+  "description": "Bot de Telegram persistente 24/7 desplegado en Railway con OpenClaw y OpenRouter",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "worker": "node dist/worker.js",
+    "worker:dev": "tsx watch src/worker.ts"
+  },
+  "dependencies": {
+    "grammy": "^1.28.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
