@@ -4,7 +4,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 COPY src ./src
 COPY tsconfig.json ./
@@ -18,7 +18,7 @@ WORKDIR /app
 
 # Instalar dependencias de producción únicamente
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copiar archivos compilados
 COPY --from=builder /app/dist ./dist
