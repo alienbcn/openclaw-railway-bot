@@ -4,6 +4,7 @@ import { CONFIG } from './config.js';
 import { logger } from './logger.js';
 import { OpenRouterService } from './openrouter-service.js';
 import { PlaywrightService } from './playwright-service.js';
+import { CONSTANTS } from './constants.js';
 
 export class TelegramBot {
   private bot: Telegraf;
@@ -76,11 +77,9 @@ export class TelegramBot {
       await ctx.reply(`🌐 Navigating to ${url}...`);
 
       try {
-        // Initialize Playwright if not already done
-        if (!this.activeSessions.get(ctx.chat.id)) {
-          await this.playwright.initialize();
-          this.activeSessions.set(ctx.chat.id, true);
-        }
+        // Initialize Playwright (handles concurrent initialization internally)
+        await this.playwright.initialize();
+        this.activeSessions.set(ctx.chat.id, true);
 
         const result = await this.playwright.navigate(url);
         await ctx.reply(`✅ ${result}`);
@@ -143,7 +142,7 @@ export class TelegramBot {
         if (needsWebContext) {
           try {
             const pageText = await this.playwright.getPageText();
-            systemPrompt = `You are viewing a web page. Here is the current page content (first 2000 chars):\n\n${pageText}\n\nAnswer the user's question based on this page content.`;
+            systemPrompt = `You are viewing a web page. Here is the current page content (first ${CONSTANTS.PAGE_TEXT_LIMIT} chars):\n\n${pageText}\n\nAnswer the user's question based on this page content.`;
           } catch (error) {
             logger.warn({ error }, 'Could not get page text');
           }
@@ -152,8 +151,8 @@ export class TelegramBot {
         const response = await this.openRouter.chat(chatId, userMessage, systemPrompt);
 
         // Split long messages if needed (Telegram has a 4096 char limit)
-        if (response.length > 4000) {
-          const chunks = this.splitMessage(response, 4000);
+        if (response.length > CONSTANTS.TELEGRAM_MESSAGE_LIMIT) {
+          const chunks = this.splitMessage(response, CONSTANTS.TELEGRAM_MESSAGE_LIMIT);
           for (const chunk of chunks) {
             await ctx.reply(chunk);
           }

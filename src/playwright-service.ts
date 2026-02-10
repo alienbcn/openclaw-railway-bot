@@ -1,12 +1,30 @@
 import { chromium, Browser, Page } from 'playwright';
 import { CONFIG } from './config.js';
 import { logger } from './logger.js';
+import { CONSTANTS } from './constants.js';
 
 export class PlaywrightService {
   private browser: Browser | null = null;
   private page: Page | null = null;
+  private isInitializing: boolean = false;
 
   async initialize(): Promise<void> {
+    // Prevent concurrent initialization
+    if (this.isInitializing) {
+      logger.info('Playwright initialization already in progress, waiting...');
+      // Wait for initialization to complete
+      while (this.isInitializing) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      return;
+    }
+
+    if (this.browser) {
+      logger.info('Playwright already initialized');
+      return;
+    }
+
+    this.isInitializing = true;
     try {
       logger.info('Initializing Playwright browser...');
       this.browser = await chromium.launch({
@@ -19,6 +37,8 @@ export class PlaywrightService {
     } catch (error) {
       logger.error({ error }, 'Failed to initialize Playwright');
       throw error;
+    } finally {
+      this.isInitializing = false;
     }
   }
 
@@ -91,7 +111,7 @@ export class PlaywrightService {
 
     try {
       const text = await this.page.innerText('body');
-      return text.slice(0, 2000); // Limit to first 2000 chars
+      return text.slice(0, CONSTANTS.PAGE_TEXT_LIMIT);
     } catch (error) {
       logger.error({ error }, 'Get page text failed');
       throw error;

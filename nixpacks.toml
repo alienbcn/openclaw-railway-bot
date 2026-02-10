@@ -1,20 +1,16 @@
-{
-  "providers": ["nodejs"],
-  "phases": {
-    "setup": {
-      "nixPkgs": ["nodejs-18_x", "playwright-driver", "chromium"]
-    },
-    "install": {
-      "cmds": [
-        "npm ci",
-        "npx playwright install --with-deps chromium"
-      ]
-    },
-    "build": {
-      "cmds": ["npm run build"]
-    }
-  },
-  "start": {
-    "cmd": "npm start"
-  }
-}
+providers = ["nodejs"]
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x", "playwright-driver", "chromium"]
+
+[phases.install]
+cmds = [
+  "npm ci",
+  "npx playwright install --with-deps chromium"
+]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm start"

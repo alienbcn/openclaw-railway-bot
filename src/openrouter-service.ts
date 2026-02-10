@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { CONFIG } from './config.js';
 import { logger } from './logger.js';
+import { CONSTANTS } from './constants.js';
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -35,9 +36,9 @@ export class OpenRouterService {
     const conversation = this.getConversation(chatId);
     conversation.push({ role, content });
 
-    // Keep only last 20 messages to manage context size
-    if (conversation.length > 20) {
-      this.conversations.set(chatId, conversation.slice(-20));
+    // Keep only last N messages to manage context size
+    if (conversation.length > CONSTANTS.MAX_CONVERSATION_MESSAGES) {
+      this.conversations.set(chatId, conversation.slice(-CONSTANTS.MAX_CONVERSATION_MESSAGES));
     }
   }
 
@@ -90,7 +91,9 @@ You can help users with:
 - Multi-turn complex tasks
 
 You are powered by Claude 3.5 Sonnet and have access to Playwright for web automation.
-Be helpful, accurate, and professional in your responses.`;
+Be helpful, accurate, and professional in your responses.
+
+Note: When viewing web pages, you receive the first ${CONSTANTS.PAGE_TEXT_LIMIT} characters of the page content.`;
   }
 
   getConversationCount(): number {
