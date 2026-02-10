@@ -12,16 +12,13 @@ COPY tsconfig.json ./
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
+FROM mcr.microsoft.com/playwright:v1.40.0-focal
 
 WORKDIR /app
 
 # Instalar dependencias de producción únicamente
 COPY package*.json ./
 RUN npm install --omit=dev
-
-# Instalar dependencias de Playwright
-RUN npx playwright install-deps
 
 # Copiar archivos compilados
 COPY --from=builder /app/dist ./dist
