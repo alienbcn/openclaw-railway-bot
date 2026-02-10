@@ -74,6 +74,15 @@ PORT=3000
 
 ## 🚂 Railway Deployment
 
+> **📖 [Guía Completa de Railway en Español](./RAILWAY_SETUP.md)** - Instrucciones detalladas paso a paso
+>
+> **🔌 Modo de Conexión:** Este bot usa **POLLING** (no webhooks), por lo que **NO necesitas**:
+> - Configurar webhooks en Telegram
+> - Exponer puertos públicos
+> - Tener un dominio o URL pública
+> 
+> El bot se conecta activamente a Telegram y funciona detrás de cualquier firewall. ✅
+
 ### One-Click Deploy
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template)
@@ -92,6 +101,8 @@ PORT=3000
 4. **Deploy**
    - Railway will automatically detect the configuration and deploy
    - The bot will start running 24/7
+
+📚 **For detailed step-by-step instructions, see [RAILWAY_SETUP.md](./RAILWAY_SETUP.md)**
 
 ## 📱 Bot Commands
 

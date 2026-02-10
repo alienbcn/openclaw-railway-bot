@@ -1,5 +1,13 @@
 # Deployment Guide
 
+> **🇪🇸 Para instrucciones detalladas en español, ver [RAILWAY_SETUP.md](./RAILWAY_SETUP.md)**
+>
+> **⚡ Connection Mode:** This bot uses **POLLING** (not webhooks):
+> - ✅ No need to configure Telegram webhooks
+> - ✅ No need to expose public ports
+> - ✅ No need for a public domain/URL
+> - ✅ Works behind firewalls without issues
+
 ## Quick Start: Railway Deployment
 
 ### Prerequisites
@@ -241,6 +249,37 @@ PLAYWRIGHT_TIMEOUT=60000  # 60 seconds for slow pages
 
 ### Issues
 Report issues at: https://github.com/alienbcn/openclaw-railway-bot/issues
+
+## Technical Architecture
+
+### Bot Connection Mode: Polling
+
+This bot uses **long polling** to receive updates from Telegram:
+
+```typescript
+// In bot.ts
+await this.bot.launch();  // Uses Telegraf's default polling mode
+```
+
+**What this means:**
+- The bot actively connects to Telegram servers and requests updates
+- No incoming connections needed (firewall-friendly)
+- No webhook configuration required
+- Port 3000 is only used for Railway's health check (internal)
+
+**Railway Configuration:**
+- Health check: `GET /health` (internal monitoring)
+- No public port exposure required for Telegram
+- Bot maintains persistent connection via polling
+
+**Why Polling Instead of Webhooks?**
+- ✅ Simpler deployment (no SSL certificate management)
+- ✅ Works in restrictive network environments
+- ✅ No domain/URL configuration needed
+- ✅ Railway's ephemeral URLs work perfectly
+- ⚠️  Slightly higher latency (acceptable for most use cases)
+
+For production environments with high message volume, consider switching to webhooks. See [Telegraf webhook documentation](https://telegraf.js.org/#/?id=webhooks) for more information.
 
 ---
 
