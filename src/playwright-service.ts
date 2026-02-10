@@ -30,7 +30,6 @@ export class PlaywrightService {
     try {
       logger.info({ url }, 'Navigating to URL');
       await this.page.goto(url, { waitUntil: 'networkidle' });
-      const content = await this.page.content();
       const title = await this.page.title();
       logger.info({ title }, 'Navigation successful');
       return `Page Title: ${title}\n\nPage loaded successfully. Ready for further actions.`;
