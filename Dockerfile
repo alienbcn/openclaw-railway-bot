@@ -20,6 +20,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev
 
+# Instalar dependencias de Playwright
+RUN npx playwright install-deps
+
 # Copiar archivos compilados
 COPY --from=builder /app/dist ./dist
 

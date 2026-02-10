@@ -24,6 +24,13 @@ export const config = {
     nodeEnv: process.env.NODE_ENV || "development",
   },
 
+  // Serper API - Search Engine
+  serper: {
+    apiKey: process.env.SERPER_API_KEY || "",
+    baseURL: "https://google.serper.dev",
+    searchEndpoint: "/search",
+  },
+
   // MCP & Integrations
   mcp: {
     playwright: {
@@ -48,5 +55,8 @@ export function validateConfig(): void {
   }
   if (!config.openrouter.apiKey) {
     throw new Error("OPENROUTER_API_KEY no está configurado");
+  }
+  if (!config.serper.apiKey) {
+    console.warn("SERPER_API_KEY no está configurado - búsqueda deshabilitada");
   }
 }
