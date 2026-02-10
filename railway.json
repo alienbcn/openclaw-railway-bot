@@ -5,10 +5,8 @@
   },
   "deploy": {
     "numReplicas": 1,
-    "restartPolicyType": "always",
-    "restartPolicyMaxRetries": -1,
-    "restartPolicyMaxRetryDurationSeconds": 0,
+    "restartPolicyType": "always",    
     "startCommand": "npm run worker",
-    "processType": "worker"
+        "processType": "worker"
   }
 }
