@@ -1,12 +1,14 @@
 {
   "build": {
-    "builder": "nixpacks"
+    "builder": "nixpacks",
+    "buildCommand": "npm ci && npm run build"
   },
   "deploy": {
     "numReplicas": 1,
     "restartPolicyType": "always",
     "restartPolicyMaxRetries": -1,
     "restartPolicyMaxRetryDurationSeconds": 0,
-    "startCommand": "npm run build && npm run worker"
+    "startCommand": "npm run worker",
+    "processType": "worker"
   }
 }
