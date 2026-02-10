@@ -28,6 +28,8 @@ OPENROUTER_API_KEY=tu_clave_aqui
 NODE_ENV=production
 ```
 
+**✅ Validado:** Todo configurado para Railway deployment
+
 ## Instalación
 
 ```bash
