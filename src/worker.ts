@@ -20,6 +20,9 @@ const log = {
 
 let isRunning = true;
 
+// Log de inicio
+console.log("Iniciando bot...");
+
 // Graceful shutdown
 process.on("SIGTERM", async () => {
   log.info("Señal SIGTERM recibida, iniciando shutdown graceful...");
@@ -56,9 +59,14 @@ async function main() {
     await registerCommandHandlers();
     log.info("✅ Handlers de comandos registrados");
 
-    // Iniciar bot
-    await telegramBot.start();
-    log.info("✅ Bot de Telegram iniciado correctamente");
+    // Iniciar bot con try-catch adicional
+    try {
+      await telegramBot.start();
+      log.info("✅ Bot de Telegram iniciado correctamente");
+    } catch (botError) {
+      log.error("Error al iniciar bot de Telegram:", botError as Error);
+      throw botError;
+    }
 
     // Keep alive: el bot se mantiene corriendo indefinidamente
     log.info("🔄 Bot 24/7 activado. Escuchando mensajes...");

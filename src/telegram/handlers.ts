@@ -2,7 +2,7 @@ import { Context } from "grammy";
 import { openRouterClient, type OpenRouterMessage } from "../llm/openrouter.js";
 import { telegramBot } from "./bot.js";
 import serperService from "../llm/serper.js";
-import { playwrightMCP } from "../mcp/playwright.js";
+// Playwright se importa solo cuando sea necesario (lazy loading)
 
 const conversationContexts: Map<number, OpenRouterMessage[]> = new Map();
 
@@ -85,6 +85,9 @@ export async function registerCommandHandlers(): Promise<void> {
   bot.command("news", async (ctx) => {
     try {
       await ctx.reply("⏳ Extrayendo noticias de El País...");
+
+      // Lazy loading de Playwright - se importa solo cuando es necesario
+      const { playwrightMCP } = await import("../mcp/playwright.js");
 
       const newsData = await playwrightMCP.scrapeElPais();
 
