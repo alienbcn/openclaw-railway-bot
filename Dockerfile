@@ -5,13 +5,7 @@ WORKDIR /app
 
 RUN apk add --no-cache git
 
-RUN git config --system url."https://github.com/".insteadOf "ssh://git@github.com/" \
-	&& git config --system url."https://github.com/".insteadOf "ssh://git@github.com" \
-	&& git config --system url."https://github.com/".insteadOf "git@github.com:" \
-	&& git config --system url."https://github.com/whiskeysockets/libsignal-node.git".insteadOf "ssh://git@github.com/whiskeysockets/libsignal-node.git" \
-	&& git config --system url."https://github.com/whiskeysockets/libsignal-node.git".insteadOf "git@github.com:whiskeysockets/libsignal-node.git"
-
-COPY package*.json ./
+COPY .npmrc package*.json ./
 RUN npm install
 
 COPY src ./src
@@ -25,17 +19,10 @@ FROM node:22-slim
 WORKDIR /app
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends git openssh-client \
+	&& apt-get install -y --no-install-recommends git \
 	&& rm -rf /var/lib/apt/lists/*
 
-RUN git config --system url."https://github.com/".insteadOf "ssh://git@github.com/" \
-	&& git config --system url."https://github.com/".insteadOf "ssh://git@github.com" \
-	&& git config --system url."https://github.com/".insteadOf "git@github.com:" \
-	&& git config --system url."https://github.com/whiskeysockets/libsignal-node.git".insteadOf "ssh://git@github.com/whiskeysockets/libsignal-node.git" \
-	&& git config --system url."https://github.com/whiskeysockets/libsignal-node.git".insteadOf "git@github.com:whiskeysockets/libsignal-node.git"
-
-# Instalar dependencias de producción únicamente
-COPY package*.json ./
+COPY .npmrc package*.json ./
 RUN npm install --omit=dev
 
 # Copiar archivos compilados
