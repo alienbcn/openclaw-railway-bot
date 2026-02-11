@@ -17,6 +17,9 @@ cp .env.example .env
 # Edita .env y agrega:
 # TELEGRAM_BOT_TOKEN=tu_token
 # OPENROUTER_API_KEY=tu_api_key
+# BRAVE_API_KEY=tu_brave_key
+# OPENCLAW_ENABLED=true
+# OPENCLAW_CONFIG_PATH=openclaw.json
 ```
 
 ### 3. Compilar y prueba local
@@ -88,6 +91,7 @@ El bot responderá con:
 | Problema | Solución |
 |----------|----------|
 | Bot no responde | Verifica variables de entorno en Railway |
+| No hay busqueda web | Revisa BRAVE_API_KEY y OPENCLAW_ENABLED |
 | Error de OpenRouter | Comprueba saldo en openrouter.ai |
 | Build falla | Ejecuta `npm install` nuevamente |
 | TypeScript errors | Ejecuta `npm run typecheck` |

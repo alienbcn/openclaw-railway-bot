@@ -30,7 +30,15 @@ Haz clic en **New repository secret** para cada uno:
   - Genera una nueva API key
   - Copia y pega aquí
 
-#### Secret 3: RAILWAY_TOKEN (Opcional para auto-deploy)
+#### Secret 3: BRAVE_API_KEY
+
+- **Name**: `BRAVE_API_KEY`
+- **Value**: Tu API key de Brave Search
+  - Ve a [brave.com/search/api](https://brave.com/search/api/)
+  - Genera una API key (plan Data for Search)
+  - Copia y pega aquí
+
+#### Secret 4: RAILWAY_TOKEN (Opcional para auto-deploy)
 
 - **Name**: `RAILWAY_TOKEN`
 - **Value**: Tu token de Railway (si quieres CI/CD automático)
@@ -67,6 +75,9 @@ Después de que Railway haya detectado el proyecto:
 ```
 TELEGRAM_BOT_TOKEN=tu_token_aqui
 OPENROUTER_API_KEY=tu_api_key_aqui
+BRAVE_API_KEY=tu_brave_key_aqui
+OPENCLAW_ENABLED=true
+OPENCLAW_CONFIG_PATH=openclaw.json
 NODE_ENV=production
 ```
 

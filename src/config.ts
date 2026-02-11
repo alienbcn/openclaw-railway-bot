@@ -1,5 +1,7 @@
 // Configuración principal del bot
 import dotenv from "dotenv";
+import fs from "node:fs";
+import path from "node:path";
 
 dotenv.config();
 
@@ -39,6 +41,19 @@ export const config = {
     },
   },
 
+  // OpenClaw (MCP Tools)
+  openclaw: {
+    enabled: process.env.OPENCLAW_ENABLED === "true",
+    configPath: process.env.OPENCLAW_CONFIG_PATH || "openclaw.json",
+    binPath: process.env.OPENCLAW_BIN || "node_modules/.bin/openclaw",
+    agentId: process.env.OPENCLAW_AGENT_ID || "",
+    thinking: process.env.OPENCLAW_THINKING || "minimal",
+    timeoutSeconds: Number.parseInt(
+      process.env.OPENCLAW_TIMEOUT_SECONDS || "120",
+      10
+    ),
+  },
+
   // Bot behavior
   bot: {
     logLevel: process.env.LOG_LEVEL || "info",
@@ -58,5 +73,15 @@ export function validateConfig(): void {
   }
   if (!config.serper.apiKey) {
     console.warn("SERPER_API_KEY no está configurado - búsqueda deshabilitada");
+  }
+  if (config.openclaw.enabled) {
+    const configPath = path.isAbsolute(config.openclaw.configPath)
+      ? config.openclaw.configPath
+      : path.resolve(process.cwd(), config.openclaw.configPath);
+    if (!fs.existsSync(configPath)) {
+      console.warn(
+        `OPENCLAW_CONFIG_PATH no encontrado: ${configPath} (OpenClaw puede fallar)`
+      );
+    }
   }
 }

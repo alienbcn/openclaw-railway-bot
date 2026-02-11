@@ -14,7 +14,7 @@ Bot de Telegram persistente (24/7) desplegado en Railway, utilizando OpenClaw co
 
 ## Requisitos Previos
 
-- Node.js >= 18.0.0
+- Node.js >= 22.0.0
 - npm o yarn
 - Github account
 - Railway account
@@ -25,6 +25,9 @@ Bot de Telegram persistente (24/7) desplegado en Railway, utilizando OpenClaw co
 ```
 TELEGRAM_BOT_TOKEN=tu_token_aqui
 OPENROUTER_API_KEY=tu_clave_aqui
+BRAVE_API_KEY=tu_brave_key_aqui
+OPENCLAW_ENABLED=true
+OPENCLAW_CONFIG_PATH=openclaw.json
 NODE_ENV=production
 ```
 

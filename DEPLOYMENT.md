@@ -35,6 +35,9 @@ En el dashboard de Railway, agrega los siguientes secretos:
 ```
 TELEGRAM_BOT_TOKEN=tu_token_del_bot
 OPENROUTER_API_KEY=tu_api_key
+BRAVE_API_KEY=tu_brave_key
+OPENCLAW_ENABLED=true
+OPENCLAW_CONFIG_PATH=openclaw.json
 NODE_ENV=production
 ```
 

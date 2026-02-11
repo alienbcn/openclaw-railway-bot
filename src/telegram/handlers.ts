@@ -3,6 +3,7 @@ import { openRouterClient, type OpenRouterMessage } from "../llm/openrouter.js";
 import { telegramBot } from "./bot.js";
 import serperService from "../llm/serper.js";
 import { config } from "../config.js";
+import { runOpenClawAgent } from "../openclaw/client.js";
 // Playwright se importa solo cuando sea necesario (lazy loading)
 
 const conversationContexts: Map<number, OpenRouterMessage[]> = new Map();
@@ -11,6 +12,13 @@ const SYSTEM_PROMPT = `Eres un asistente amable y útil. Responde de manera conc
 Eres capaz de navegar por internet, analizar información y ayudar al usuario con sus preguntas.`;
 
 const BOT_VERSION = "2026-02-11";
+
+async function replyInChunks(ctx: Context, text: string): Promise<void> {
+  const chunks = text.match(/[\s\S]{1,4096}/g) || [text];
+  for (const chunk of chunks) {
+    await ctx.reply(chunk, { parse_mode: "HTML" });
+  }
+}
 
 function isDateQuery(text: string): boolean {
   const normalized = text.toLowerCase();
@@ -103,10 +111,13 @@ export async function registerCommandHandlers(): Promise<void> {
   bot.command("help", async (ctx) => {
     const llmEnabled = Boolean(config.openrouter.apiKey);
     const serperEnabled = Boolean(config.serper.apiKey);
+    const openclawEnabled = config.openclaw.enabled;
 
-    const llmLine = llmEnabled
-      ? "- 💬 Conversacion inteligente\n"
-      : "- 💬 Conversacion inteligente (deshabilitada)\n";
+    const llmLine = openclawEnabled
+      ? "- 🦞 OpenClaw (tools web: Brave + fetch)\n"
+      : llmEnabled
+        ? "- 💬 Conversacion inteligente\n"
+        : "- 💬 Conversacion inteligente (deshabilitada)\n";
     const bitcoinLine = serperEnabled
       ? "- /bitcoin - Obtener precio actual de Bitcoin\n"
       : "- /bitcoin - Obtener precio actual de Bitcoin (deshabilitado)\n";
@@ -135,11 +146,13 @@ export async function registerCommandHandlers(): Promise<void> {
     const uptime = process.uptime();
     const uptimeHours = Math.floor(uptime / 3600);
     const uptimeMinutes = Math.floor((uptime % 3600) / 60);
+    const mode = config.openclaw.enabled ? "OpenClaw" : "OpenRouter";
 
     await ctx.reply(
       `✅ Bot activo\n\n` +
       `⏱️ Uptime: ${uptimeHours}h ${uptimeMinutes}m\n` +
       `🤖 Version: ${BOT_VERSION}\n` +
+      `🧠 Modo: ${mode}\n` +
       `🚀 Despliegue: Railway`
     );
   });
@@ -202,6 +215,29 @@ export async function registerCommandHandlers(): Promise<void> {
         return;
       }
 
+      if (config.openclaw.enabled) {
+        try {
+          const sessionId = `telegram:${userId}`;
+          const result = await runOpenClawAgent(userMessage, sessionId);
+
+          if (!result.text) {
+            await ctx.reply("⚠️ OpenClaw no devolvio respuesta.");
+            return;
+          }
+
+          await replyInChunks(ctx, result.text);
+          return;
+        } catch (error) {
+          console.error("Error OpenClaw:", error);
+          if (!config.openrouter.apiKey) {
+            await ctx.reply(
+              "❌ OpenClaw fallo y OpenRouter no esta configurado."
+            );
+            return;
+          }
+        }
+      }
+
       if (!config.openrouter.apiKey) {
         await ctx.reply(
           "⚠️ Conversacion inteligente deshabilitada. Usa /news para probar MCP Playwright."
@@ -241,10 +277,7 @@ export async function registerCommandHandlers(): Promise<void> {
       conversationContexts.set(userId, messages.slice(-50));
 
       // Dividir respuesta en bloques si es muy larga
-      const chunks = response.match(/[\s\S]{1,4096}/g) || [response];
-      for (const chunk of chunks) {
-        await ctx.reply(chunk, { parse_mode: "HTML" });
-      }
+      await replyInChunks(ctx, response);
       console.log(`[HANDLER] Respuesta enviada exitosamente a ${userId}`);
     } catch (error) {
       console.error("Error procesando mensaje:", error);

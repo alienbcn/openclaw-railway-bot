@@ -21,6 +21,14 @@ export interface BotConfig {
       browser: "chromium" | "brave" | "firefox" | "webkit";
     };
   };
+  openclaw: {
+    enabled: boolean;
+    configPath: string;
+    binPath: string;
+    agentId: string;
+    thinking: string;
+    timeoutSeconds: number;
+  };
   bot: {
     logLevel: string;
     timeout: number;
