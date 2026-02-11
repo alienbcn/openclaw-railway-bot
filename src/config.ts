@@ -16,7 +16,7 @@ export const config = {
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || "",
     baseURL: "https://generativelanguage.googleapis.com",
-    model: process.env.GEMINI_MODEL || "gemini-2.0-flash-exp",
+    model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
     maxTokens: Number.parseInt(process.env.GEMINI_MAX_TOKENS || "2048", 10),
     temperature: Number.parseFloat(process.env.GEMINI_TEMPERATURE || "0.7"),
     topP: Number.parseFloat(process.env.GEMINI_TOP_P || "0.95"),
