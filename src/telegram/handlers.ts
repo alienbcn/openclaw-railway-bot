@@ -250,34 +250,32 @@ export async function registerCommandHandlers(): Promise<void> {
         return;
       }
 
-      if (config.openclaw.enabled) {
-        try {
-          const sessionId = `telegram:${userId}`;
-          const result = await runOpenClawAgent(userMessage, sessionId);
-
-          if (!result.text) {
-            await ctx.reply("⚠️ OpenClaw no devolvio respuesta.");
-            return;
-          }
-
-          await replyInChunks(ctx, result.text);
-          return;
-        } catch (error) {
-          console.error("Error OpenClaw:", error);
-          if (!config.gemini.apiKey && !config.openrouter.apiKey) {
-            await ctx.reply(
-              "❌ OpenClaw fallo y no hay LLM configurado. Configura GEMINI_API_KEY."
-            );
-            return;
-          }
-        }
-      }
-
+      // Verificar si hay LLM configurado antes de proceder
       if (!config.gemini.apiKey && !config.openrouter.apiKey) {
         await ctx.reply(
           "⚠️ Conversacion inteligente deshabilitada. Configura GEMINI_API_KEY para activarla."
         );
         return;
+      }
+
+      // Intentar con OpenClaw si está habilitado
+      if (config.openclaw.enabled) {
+        try {
+          console.log("[OPENCLAW] Intentando procesar con OpenClaw...");
+          const sessionId = `telegram:${userId}`;
+          const result = await runOpenClawAgent(userMessage, sessionId);
+
+          if (result.text && result.text.trim()) {
+            console.log("[OPENCLAW] Respuesta exitosa de OpenClaw");
+            await replyInChunks(ctx, result.text);
+            return;
+          } else {
+            console.warn("[OPENCLAW] OpenClaw no devolvió respuesta, usando fallback Gemini");
+          }
+        } catch (error) {
+          console.error("[OPENCLAW] Error con OpenClaw, usando fallback Gemini:", error);
+          // Continuar con Gemini como fallback
+        }
       }
 
       // Obtener o crear contexto de conversación
