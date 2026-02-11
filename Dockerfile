@@ -5,8 +5,11 @@ WORKDIR /app
 
 RUN apk add --no-cache git
 
+# Force script execution to be disabled at package manager level
+ENV npm_config_ignore_scripts=true
+
 COPY .npmrc package*.json ./
-RUN npm ci --omit=dev --ignore-scripts || true
+RUN npm ci --omit=dev 2>&1 | grep -v "Cloning ggml-org" || true
 
 COPY src ./src
 COPY tsconfig.json ./
