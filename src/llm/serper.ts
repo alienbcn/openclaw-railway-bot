@@ -2,7 +2,7 @@
 // Proporciona búsqueda de Google en tiempo real para investigar nichos y tendencias
 
 import axios, { AxiosInstance } from "axios";
-import { config } from "../config";
+import { config } from "../config.js";
 
 export interface SearchResult {
   title: string;

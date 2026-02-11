@@ -12,8 +12,18 @@ Eres capaz de navegar por internet, analizar información y ayudar al usuario co
 export async function registerCommandHandlers(): Promise<void> {
   const bot = telegramBot.getBot();
 
+  // Middleware para logging de todos los updates
+  bot.use(async (ctx, next) => {
+    const updateType = ctx.update.message?.text ? "text" : 
+                       ctx.update.message?.photo ? "photo" : 
+                       ctx.update.callback_query ? "callback" : "other";
+    console.log(`[UPDATE] Tipo: ${updateType}, De: ${ctx.from?.id}, Username: @${ctx.from?.username || "unknown"}`);
+    await next();
+  });
+
   // /start
   bot.command("start", async (ctx) => {
+    console.log(`[COMMAND] /start recibido de ${ctx.from?.id}`);
     conversationContexts.set(ctx.from?.id || 0, []);
     await ctx.reply(
       "¡Hola! 👋 Soy un bot de Telegram inteligente.\n\n" +
@@ -115,6 +125,7 @@ export async function registerCommandHandlers(): Promise<void> {
   // Manejar mensajes de texto
   bot.on("message:text", async (ctx) => {
     try {
+      console.log(`[HANDLER] Mensaje de texto recibido de ${ctx.from?.id}: ${ctx.message.text}`);
       const userId = ctx.from?.id || 0;
       const userMessage = ctx.message.text;
 
@@ -147,6 +158,7 @@ export async function registerCommandHandlers(): Promise<void> {
       for (const chunk of chunks) {
         await ctx.reply(chunk, { parse_mode: "HTML" });
       }
+      console.log(`[HANDLER] Respuesta enviada exitosamente a ${userId}`);
     } catch (error) {
       console.error("Error procesando mensaje:", error);
       await ctx.reply(
@@ -155,8 +167,5 @@ export async function registerCommandHandlers(): Promise<void> {
     }
   });
 
-  // Manejar otros tipos de mensajes
-  bot.on("message", async (ctx) => {
-    await ctx.reply("ℹ️ Solo puedo procesar mensajes de texto por ahora.");
-  });
+  console.log("[HANDLERS] Todos los handlers registrados correctamente");
 }

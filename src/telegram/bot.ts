@@ -31,8 +31,21 @@ export class TelegramBot {
   }
 
   async start(): Promise<void> {
-    console.log("🤖 Bot de Telegram iniciado...");
-    await this.bot.start();
+    console.log("🤖 Bot de Telegram iniciando con long polling...");
+    
+    // Configurar manejo de errores
+    this.bot.catch((err) => {
+      console.error("[BOT ERROR]", err);
+    });
+    
+    // Iniciar con long polling (por defecto en grammy)
+    await this.bot.start({
+      onStart: (botInfo) => {
+        console.log(`✅ Bot @${botInfo.username} conectado exitosamente`);
+        console.log(`   ID: ${botInfo.id}`);
+        console.log(`   Nombre: ${botInfo.first_name}`);
+      },
+    });
   }
 
   async stop(): Promise<void> {
