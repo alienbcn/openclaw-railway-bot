@@ -46,10 +46,15 @@ async function handleNewsRequest(ctx: Context): Promise<void> {
 
   const { playwrightMCP } = await import("../mcp/playwright.js");
 
-  let newsData = await playwrightMCP.scrapeElPais();
-  const headline = newsData.headline?.trim();
-
-  if (!newsData.success || !headline || headline === "No encontrado") {
+  let newsData;
+  try {
+    newsData = await playwrightMCP.scrapeElPais();
+    const headline = newsData.headline?.trim();
+    if (!newsData.success || !headline || headline === "No encontrado") {
+      newsData = await playwrightMCP.scrapeElPaisViaHttp();
+    }
+  } catch (error) {
+    console.warn("Playwright no disponible, usando fallback HTTP:", error);
     newsData = await playwrightMCP.scrapeElPaisViaHttp();
   }
 
