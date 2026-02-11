@@ -6,6 +6,7 @@ WORKDIR /app
 RUN apk add --no-cache git
 
 RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/" \
+	&& git config --global url."https://github.com/".insteadOf "ssh://git@github.com" \
 	&& git config --global url."https://github.com/".insteadOf "git@github.com:"
 
 COPY package*.json ./
@@ -26,6 +27,7 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/" \
+	&& git config --global url."https://github.com/".insteadOf "ssh://git@github.com" \
 	&& git config --global url."https://github.com/".insteadOf "git@github.com:"
 
 # Instalar dependencias de producción únicamente
