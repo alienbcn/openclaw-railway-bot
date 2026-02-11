@@ -9,7 +9,7 @@ RUN apk add --no-cache git
 ENV npm_config_ignore_scripts=true
 
 COPY .npmrc package*.json ./
-RUN npm ci --omit=dev 2>&1 | grep -v "Cloning ggml-org" || true
+RUN npm ci --omit=dev || true
 
 COPY src ./src
 COPY tsconfig.json ./
