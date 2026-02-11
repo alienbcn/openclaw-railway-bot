@@ -12,6 +12,62 @@ Eres capaz de navegar por internet, analizar información y ayudar al usuario co
 
 const BOT_VERSION = "2026-02-11";
 
+function isDateQuery(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    normalized.includes("fecha") ||
+    normalized.includes("dia") ||
+    normalized.includes("día")
+  ) && normalized.includes("hoy");
+}
+
+function isHeadlineQuery(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    normalized.includes("titular") ||
+    normalized.includes("periodico") ||
+    normalized.includes("periódico") ||
+    normalized.includes("elpais") ||
+    normalized.includes("el pais")
+  );
+}
+
+function formatToday(): string {
+  return new Date().toLocaleDateString("es-ES", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+async function handleNewsRequest(ctx: Context): Promise<void> {
+  await ctx.reply("⏳ Extrayendo noticias de El País...");
+
+  const { playwrightMCP } = await import("../mcp/playwright.js");
+
+  let newsData = await playwrightMCP.scrapeElPais();
+  const headline = newsData.headline?.trim();
+
+  if (!newsData.success || !headline || headline === "No encontrado") {
+    newsData = await playwrightMCP.scrapeElPaisViaHttp();
+  }
+
+  if (newsData.success) {
+    const message =
+      `📰 <b>Noticia Principal - El País</b>\n\n` +
+      `${newsData.headline}\n\n` +
+      `🔗 <a href="${newsData.url}">Leer más</a>\n` +
+      `⏰ ${new Date(newsData.timestamp).toLocaleString("es-ES")}`;
+
+    await ctx.reply(message, { parse_mode: "HTML" });
+  } else {
+    await ctx.reply(
+      `❌ No pude extraer titulares. Error: ${newsData.headline}`
+    );
+  }
+}
+
 export async function registerCommandHandlers(): Promise<void> {
   const bot = telegramBot.getBot();
 
@@ -115,26 +171,7 @@ export async function registerCommandHandlers(): Promise<void> {
   // /news - Obtener noticias principales de El País usando Playwright
   bot.command("news", async (ctx) => {
     try {
-      await ctx.reply("⏳ Extrayendo noticias de El País...");
-
-      // Lazy loading de Playwright - se importa solo cuando es necesario
-      const { playwrightMCP } = await import("../mcp/playwright.js");
-
-      const newsData = await playwrightMCP.scrapeElPais();
-
-      if (newsData.success) {
-        const message =
-          `📰 <b>Noticia Principal - El País</b>\n\n` +
-          `${newsData.headline}\n\n` +
-          `🔗 <a href="${newsData.url}">Leer más</a>\n` +
-          `⏰ ${new Date(newsData.timestamp).toLocaleString("es-ES")}`;
-
-        await ctx.reply(message, { parse_mode: "HTML" });
-      } else {
-        await ctx.reply(
-          `❌ Error: ${newsData.headline}\n\nAsegúrate de tener acceso a internet y que Playwright esté correctamente instalado.`
-        );
-      }
+      await handleNewsRequest(ctx);
     } catch (error) {
       console.error("Error obteniendo noticias:", error);
       await ctx.reply(
@@ -149,6 +186,16 @@ export async function registerCommandHandlers(): Promise<void> {
       console.log(`[HANDLER] Mensaje de texto recibido de ${ctx.from?.id}: ${ctx.message.text}`);
       const userId = ctx.from?.id || 0;
       const userMessage = ctx.message.text;
+
+      if (isDateQuery(userMessage)) {
+        await ctx.reply(`📅 Hoy es ${formatToday()}`);
+        return;
+      }
+
+      if (isHeadlineQuery(userMessage)) {
+        await handleNewsRequest(ctx);
+        return;
+      }
 
       if (!config.openrouter.apiKey) {
         await ctx.reply(
@@ -171,6 +218,13 @@ export async function registerCommandHandlers(): Promise<void> {
         messages.slice(-10), // Últimos 10 mensajes para contexto
         SYSTEM_PROMPT
       );
+
+      if (!response || !response.trim()) {
+        await ctx.reply(
+          "⚠️ No pude generar una respuesta. Prueba /news o pregunta otra cosa."
+        );
+        return;
+      }
 
       // Agregar respuesta al historial
       messages.push({

@@ -4,6 +4,7 @@
  */
 
 import { chromium, Browser, Page } from "playwright";
+import axios from "axios";
 import { config } from "../config.js";
 
 export interface BrowserOptions {
@@ -157,6 +158,47 @@ export class PlaywrightMCP {
         await page.close();
       }
     }
+  }
+
+  /**
+   * Fallback HTTP: extrae titular sin navegador (para entornos sin browsers)
+   */
+  async scrapeElPaisViaHttp(): Promise<{
+    success: boolean;
+    headline: string;
+    url: string;
+    timestamp: string;
+  }> {
+    try {
+      const url = "https://elpais.com";
+      const response = await axios.get(url, { timeout: 15000 });
+      const html = String(response.data || "");
+
+      const headline = this.extractHeadlineFromHtml(html) || "No encontrado";
+
+      return {
+        success: Boolean(headline && headline !== "No encontrado"),
+        headline,
+        url,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        headline: `Error: ${error}`,
+        url: "https://elpais.com",
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  private extractHeadlineFromHtml(html: string): string | null {
+    const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+    const h2Match = html.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i);
+    const raw = h1Match?.[1] || h2Match?.[1];
+    if (!raw) return null;
+
+    return raw.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   }
 
   async extractText(url: string): Promise<string> {
