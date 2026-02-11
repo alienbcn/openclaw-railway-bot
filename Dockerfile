@@ -7,7 +7,9 @@ RUN apk add --no-cache git
 
 RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/" \
 	&& git config --global url."https://github.com/".insteadOf "ssh://git@github.com" \
-	&& git config --global url."https://github.com/".insteadOf "git@github.com:"
+	&& git config --global url."https://github.com/".insteadOf "git@github.com:" \
+	&& git config --global url."https://github.com/whiskeysockets/libsignal-node.git".insteadOf "ssh://git@github.com/whiskeysockets/libsignal-node.git" \
+	&& git config --global url."https://github.com/whiskeysockets/libsignal-node.git".insteadOf "git@github.com:whiskeysockets/libsignal-node.git"
 
 COPY package*.json ./
 RUN npm install
@@ -28,7 +30,9 @@ RUN apt-get update \
 
 RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/" \
 	&& git config --global url."https://github.com/".insteadOf "ssh://git@github.com" \
-	&& git config --global url."https://github.com/".insteadOf "git@github.com:"
+	&& git config --global url."https://github.com/".insteadOf "git@github.com:" \
+	&& git config --global url."https://github.com/whiskeysockets/libsignal-node.git".insteadOf "ssh://git@github.com/whiskeysockets/libsignal-node.git" \
+	&& git config --global url."https://github.com/whiskeysockets/libsignal-node.git".insteadOf "git@github.com:whiskeysockets/libsignal-node.git"
 
 # Instalar dependencias de producción únicamente
 COPY package*.json ./
