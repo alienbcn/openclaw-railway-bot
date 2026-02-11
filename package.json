@@ -9,7 +9,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "worker": "bash scripts/pre-start.sh && node dist/worker.js",
+    "worker": "node dist/worker.js",
     "worker:dev": "tsx watch src/worker.ts",
     "diagnostic": "bash scripts/diagnostic.sh",
     "check-webhook": "bash scripts/check-webhook.sh"

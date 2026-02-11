@@ -2,12 +2,15 @@ import { Context } from "grammy";
 import { openRouterClient, type OpenRouterMessage } from "../llm/openrouter.js";
 import { telegramBot } from "./bot.js";
 import serperService from "../llm/serper.js";
+import { config } from "../config.js";
 // Playwright se importa solo cuando sea necesario (lazy loading)
 
 const conversationContexts: Map<number, OpenRouterMessage[]> = new Map();
 
 const SYSTEM_PROMPT = `Eres un asistente amable y útil. Responde de manera concisa y clara. 
 Eres capaz de navegar por internet, analizar información y ayudar al usuario con sus preguntas.`;
+
+const BOT_VERSION = "2026-02-11";
 
 export async function registerCommandHandlers(): Promise<void> {
   const bot = telegramBot.getBot();
@@ -37,14 +40,25 @@ export async function registerCommandHandlers(): Promise<void> {
 
   // /help
   bot.command("help", async (ctx) => {
+    const llmEnabled = Boolean(config.openrouter.apiKey);
+    const serperEnabled = Boolean(config.serper.apiKey);
+
+    const llmLine = llmEnabled
+      ? "- 💬 Conversacion inteligente\n"
+      : "- 💬 Conversacion inteligente (deshabilitada)\n";
+    const bitcoinLine = serperEnabled
+      ? "- /bitcoin - Obtener precio actual de Bitcoin\n"
+      : "- /bitcoin - Obtener precio actual de Bitcoin (deshabilitado)\n";
+
     await ctx.reply(
       "📚 Comandos disponibles:\n\n" +
       "/start - Iniciar conversación\n" +
       "/help - Ver esta ayuda\n" +
       "/clear - Limpiar historial de conversación\n" +
       "/status - Ver estado del bot\n" +
-      "/bitcoin - Obtener precio actual de Bitcoin\n" +
+      bitcoinLine +
       "/news - Obtener noticias principales de El País\n\n" +
+      llmLine +
       "También puedes escribir mensajes normales para conversar."
     );
   });
@@ -64,13 +78,20 @@ export async function registerCommandHandlers(): Promise<void> {
     await ctx.reply(
       `✅ Bot activo\n\n` +
       `⏱️ Uptime: ${uptimeHours}h ${uptimeMinutes}m\n` +
-      `🤖 Version: 1.0.0\n` +
+      `🤖 Version: ${BOT_VERSION}\n` +
       `🚀 Despliegue: Railway`
     );
   });
 
   // /bitcoin - Obtener precio actual de Bitcoin usando Serper
   bot.command("bitcoin", async (ctx) => {
+    if (!config.serper.apiKey) {
+      await ctx.reply(
+        "⚠️ Comando deshabilitado. Configura SERPER_API_KEY para activar /bitcoin."
+      );
+      return;
+    }
+
     try {
       await ctx.reply("⏳ Buscando precio de Bitcoin...");
 
@@ -128,6 +149,13 @@ export async function registerCommandHandlers(): Promise<void> {
       console.log(`[HANDLER] Mensaje de texto recibido de ${ctx.from?.id}: ${ctx.message.text}`);
       const userId = ctx.from?.id || 0;
       const userMessage = ctx.message.text;
+
+      if (!config.openrouter.apiKey) {
+        await ctx.reply(
+          "⚠️ Conversacion inteligente deshabilitada. Usa /news para probar MCP Playwright."
+        );
+        return;
+      }
 
       // Obtener o crear contexto de conversación
       let messages = conversationContexts.get(userId) || [];

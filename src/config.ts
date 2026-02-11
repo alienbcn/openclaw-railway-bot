@@ -54,7 +54,7 @@ export function validateConfig(): void {
     throw new Error("TELEGRAM_BOT_TOKEN no está configurado");
   }
   if (!config.openrouter.apiKey) {
-    throw new Error("OPENROUTER_API_KEY no está configurado");
+    console.warn("OPENROUTER_API_KEY no está configurado - LLM deshabilitado");
   }
   if (!config.serper.apiKey) {
     console.warn("SERPER_API_KEY no está configurado - búsqueda deshabilitada");

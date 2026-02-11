@@ -7,6 +7,7 @@
 import { validateConfig } from "./config.js";
 import { telegramBot } from "./telegram/bot.js";
 import { registerCommandHandlers } from "./telegram/handlers.js";
+import axios from "axios";
 
 // Logger
 const log = {
@@ -47,9 +48,52 @@ process.on("unhandledRejection", (reason, promise) => {
   process.exit(1);
 });
 
+async function cleanupWebhook() {
+  try {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    if (!token) {
+      log.error("TELEGRAM_BOT_TOKEN no configurado");
+      return;
+    }
+
+    log.info("🧹 Verificando y limpiando webhook...");
+    
+    const response = await axios.get(
+      `https://api.telegram.org/bot${token}/getWebhookInfo`,
+      { timeout: 5000 }
+    );
+
+    const webhookUrl = response.data?.result?.url;
+    
+    if (webhookUrl) {
+      log.warn(`⚠️  Webhook detectado: ${webhookUrl}`);
+      log.info("🔧 Eliminando webhook para usar polling...");
+      
+      const deleteResponse = await axios.get(
+        `https://api.telegram.org/bot${token}/deleteWebhook?drop_pending_updates=true`,
+        { timeout: 5000 }
+      );
+
+      if (deleteResponse.data?.ok) {
+        log.info("✅ Webhook eliminado exitosamente");
+      } else {
+        log.warn("⚠️  No se pudo eliminar el webhook, continuando...");
+      }
+    } else {
+      log.info("✅ No hay webhook configurado");
+    }
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.warn(`⚠️  Error verificando webhook (continuando): ${errorMsg}`);
+  }
+}
+
 async function main() {
   try {
     log.info("🚀 Iniciando openclaw-railway-bot worker...");
+
+    // Limpiar webhook primero
+    await cleanupWebhook();
 
     // Validar configuración
     validateConfig();
