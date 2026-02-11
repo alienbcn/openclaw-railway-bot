@@ -9,12 +9,13 @@ RUN apk add --no-cache git
 ENV npm_config_ignore_scripts=true
 
 COPY .npmrc package*.json ./
-RUN npm ci --omit=dev || true
+RUN npm ci --ignore-scripts || true
 
 COPY src ./src
 COPY tsconfig.json ./
 
 RUN npm run build
+RUN npm prune --omit=dev --ignore-scripts
 
 # Production stage
 FROM node:22-slim
