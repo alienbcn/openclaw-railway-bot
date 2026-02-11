@@ -8,6 +8,7 @@ import { validateConfig } from "./config.js";
 import { telegramBot } from "./telegram/bot.js";
 import { registerCommandHandlers } from "./telegram/handlers.js";
 import axios from "axios";
+import http from "node:http";
 
 // Logger
 const log = {
@@ -20,20 +21,68 @@ const log = {
 };
 
 let isRunning = true;
+let httpServer: http.Server | null = null;
 
 // Log de inicio
 console.log("Iniciando bot...");
+
+// Crear servidor HTTP mínimo para mantener vivo el proceso en Railway
+function startHealthServer(): Promise<void> {
+  return new Promise((resolve) => {
+    const port = process.env.PORT || 3000;
+    
+    httpServer = http.createServer((req, res) => {
+      if (req.url === "/health" || req.url === "/") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ 
+          status: "ok", 
+          bot: "running",
+          timestamp: new Date().toISOString()
+        }));
+      } else if (req.url === "/metrics") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ 
+          uptime: process.uptime(),
+          memory: process.memoryUsage(),
+          timestamp: new Date().toISOString()
+        }));
+      } else {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Not found" }));
+      }
+    });
+
+    httpServer.listen(port, () => {
+      log.info(`🌐 Servidor HTTP de health check escuchando en puerto ${port}`);
+      resolve();
+    });
+
+    httpServer.on("error", (err) => {
+      log.error("Error en servidor HTTP:", err);
+    });
+  });
+}
 
 // Graceful shutdown
 process.on("SIGTERM", async () => {
   log.info("Señal SIGTERM recibida, iniciando shutdown graceful...");
   isRunning = false;
+  
+  if (httpServer) {
+    httpServer.close();
+  }
+  
   process.exit(0);
 });
 
 process.on("SIGINT", async () => {
   log.info("Señal SIGINT recibida, iniciando shutdown graceful...");
   isRunning = false;
+  
+  if (httpServer) {
+    httpServer.close();
+  }
+  
   process.exit(0);
 });
 
@@ -96,7 +145,11 @@ async function main() {
     log.info("🚂 Railway URL: " + (process.env.RAILWAY_STATIC_URL || "no configurado"));
     log.info("");
 
-    // Limpiar webhook primero
+    // Iniciar servidor HTTP primero (para que Railway no lo mate)
+    log.info("📡 Iniciando servidor HTTP de health check...");
+    await startHealthServer();
+
+    // Limpiar webhook
     await cleanupWebhook();
 
     // Validar configuración
