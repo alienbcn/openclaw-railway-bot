@@ -6,7 +6,10 @@ WORKDIR /app
 RUN apk add --no-cache git
 
 # Force script execution to be disabled at package manager level
-ENV npm_config_ignore_scripts=true
+# and ensure dev deps are installed for the build.
+ENV npm_config_ignore_scripts=true \
+	npm_config_production=false \
+	NODE_ENV=development
 
 COPY .npmrc package*.json ./
 RUN npm ci --ignore-scripts || true
