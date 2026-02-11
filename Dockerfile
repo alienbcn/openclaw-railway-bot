@@ -3,6 +3,8 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+RUN apk add --no-cache git
+
 COPY package*.json ./
 RUN npm install
 
@@ -15,6 +17,10 @@ RUN npm run build
 FROM node:22-slim
 
 WORKDIR /app
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends git \
+	&& rm -rf /var/lib/apt/lists/*
 
 # Instalar dependencias de producción únicamente
 COPY package*.json ./
