@@ -288,13 +288,18 @@ export async function registerCommandHandlers(): Promise<void> {
       });
 
       // Generar respuesta con Gemini (o OpenRouter como fallback)
+      console.log(`[LLM] Generando respuesta. Gemini disponible: ${!!config.gemini.apiKey}, OpenRouter disponible: ${!!config.openrouter.apiKey}`);
+      console.log(`[LLM] Mensajes en contexto: ${messages.length}`);
+      
       let response: string;
       if (config.gemini.apiKey) {
+        console.log("[LLM] Usando Gemini para generar respuesta...");
         response = await geminiClient.generateResponseWithRetry(
           messages.slice(-10), // Últimos 10 mensajes para contexto
           SYSTEM_PROMPT
         );
       } else {
+        console.log("[LLM] Usando OpenRouter para generar respuesta...");
         response = await openRouterClient.generateResponseWithRetry(
           messages.slice(-10),
           SYSTEM_PROMPT
@@ -321,9 +326,13 @@ export async function registerCommandHandlers(): Promise<void> {
       await replyInChunks(ctx, response);
       console.log(`[HANDLER] Respuesta enviada exitosamente a ${userId}`);
     } catch (error) {
-      console.error("Error procesando mensaje:", error);
+      console.error("[ERROR] Error procesando mensaje:", error);
+      if (error instanceof Error) {
+        console.error("[ERROR] Mensaje de error:", error.message);
+        console.error("[ERROR] Stack:", error.stack);
+      }
       await ctx.reply(
-        "❌ Disculpa, hubo un error procesando tu mensaje. Por favor intenta de nuevo."
+        `❌ Error: ${error instanceof Error ? error.message : 'Error desconocido'}. Revisa los logs.`
       );
     }
   });

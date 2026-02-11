@@ -62,12 +62,18 @@ export class GeminiClient {
     systemPrompt?: string
   ): Promise<string> {
     try {
+      console.log("[GEMINI] Iniciando generación de respuesta");
+      console.log("[GEMINI] API Key presente:", !!this.apiKey, "Longitud:", this.apiKey?.length || 0);
+      console.log("[GEMINI] Modelo:", config.gemini.model);
+      console.log("[GEMINI] Mensajes a enviar:", messages.length);
+      
       const { contents, systemInstruction } = this.convertToGeminiFormat(
         messages,
         systemPrompt
       );
 
       const url = `/v1beta/models/${config.gemini.model}:generateContent?key=${this.apiKey}`;
+      console.log("[GEMINI] URL (sin key):", url.replace(/key=.+$/, 'key=***'));
 
       const requestBody: any = {
         contents,
@@ -82,14 +88,19 @@ export class GeminiClient {
         requestBody.systemInstruction = systemInstruction;
       }
 
+      console.log("[GEMINI] Enviando petición a Gemini...");
       const response = await this.client.post<GeminiResponse>(url, requestBody);
+      console.log("[GEMINI] Respuesta recibida. Status:", response.status);
 
       const content = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
       
       if (!content) {
+        console.error("[GEMINI] No se recibió contenido en la respuesta");
+        console.error("[GEMINI] Respuesta completa:", JSON.stringify(response.data, null, 2));
         throw new Error("No response content from Gemini");
       }
 
+      console.log("[GEMINI] Contenido generado exitosamente. Longitud:", content.length);
       return content;
     } catch (error) {
       if (axios.isAxiosError(error)) {
