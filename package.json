@@ -12,7 +12,8 @@
     "worker": "node dist/worker.js",
     "worker:dev": "tsx watch src/worker.ts",
     "diagnostic": "bash scripts/diagnostic.sh",
-    "check-webhook": "bash scripts/check-webhook.sh"
+    "check-webhook": "bash scripts/check-webhook.sh",
+    "postinstall": "echo 'Skipping postinstall scripts'"
   },
   "dependencies": {
     "axios": "^1.6.0",

@@ -6,7 +6,7 @@ WORKDIR /app
 RUN apk add --no-cache git
 
 COPY .npmrc package*.json ./
-RUN npm install --ignore-scripts
+RUN npm ci --omit=dev --ignore-scripts || true
 
 COPY src ./src
 COPY tsconfig.json ./
