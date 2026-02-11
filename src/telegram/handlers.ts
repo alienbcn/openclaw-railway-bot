@@ -1,12 +1,18 @@
 import { Context } from "grammy";
-import { openRouterClient, type OpenRouterMessage } from "../llm/openrouter.js";
+import { geminiClient } from "../llm/gemini.js";
+import { openRouterClient } from "../llm/openrouter.js";
 import { telegramBot } from "./bot.js";
 import serperService from "../llm/serper.js";
 import { config } from "../config.js";
 import { runOpenClawAgent } from "../openclaw/client.js";
 // Playwright se importa solo cuando sea necesario (lazy loading)
 
-const conversationContexts: Map<number, OpenRouterMessage[]> = new Map();
+interface ConversationMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
+const conversationContexts: Map<number, ConversationMessage[]> = new Map();
 
 const SYSTEM_PROMPT = `Eres un asistente amable y útil. Responde de manera concisa y clara. 
 Eres capaz de navegar por internet, analizar información y ayudar al usuario con sus preguntas.`;
@@ -109,14 +115,14 @@ export async function registerCommandHandlers(): Promise<void> {
 
   // /help
   bot.command("help", async (ctx) => {
-    const llmEnabled = Boolean(config.openrouter.apiKey);
+    const llmEnabled = Boolean(config.gemini.apiKey || config.openrouter.apiKey);
     const serperEnabled = Boolean(config.serper.apiKey);
     const openclawEnabled = config.openclaw.enabled;
 
     const llmLine = openclawEnabled
       ? "- 🦞 OpenClaw (tools web: Brave + fetch)\n"
       : llmEnabled
-        ? "- 💬 Conversacion inteligente\n"
+        ? "- 💬 Conversacion inteligente (Gemini)\n"
         : "- 💬 Conversacion inteligente (deshabilitada)\n";
     const bitcoinLine = serperEnabled
       ? "- /bitcoin - Obtener precio actual de Bitcoin\n"
@@ -146,7 +152,13 @@ export async function registerCommandHandlers(): Promise<void> {
     const uptime = process.uptime();
     const uptimeHours = Math.floor(uptime / 3600);
     const uptimeMinutes = Math.floor((uptime % 3600) / 60);
-    const mode = config.openclaw.enabled ? "OpenClaw" : "OpenRouter";
+    const mode = config.openclaw.enabled 
+      ? "OpenClaw" 
+      : config.gemini.apiKey 
+        ? "Gemini" 
+        : config.openrouter.apiKey 
+          ? "OpenRouter" 
+          : "Sin LLM";
 
     await ctx.reply(
       `✅ Bot activo\n\n` +
@@ -229,18 +241,18 @@ export async function registerCommandHandlers(): Promise<void> {
           return;
         } catch (error) {
           console.error("Error OpenClaw:", error);
-          if (!config.openrouter.apiKey) {
+          if (!config.gemini.apiKey && !config.openrouter.apiKey) {
             await ctx.reply(
-              "❌ OpenClaw fallo y OpenRouter no esta configurado."
+              "❌ OpenClaw fallo y no hay LLM configurado. Configura GEMINI_API_KEY."
             );
             return;
           }
         }
       }
 
-      if (!config.openrouter.apiKey) {
+      if (!config.gemini.apiKey && !config.openrouter.apiKey) {
         await ctx.reply(
-          "⚠️ Conversacion inteligente deshabilitada. Usa /news para probar MCP Playwright."
+          "⚠️ Conversacion inteligente deshabilitada. Configura GEMINI_API_KEY para activarla."
         );
         return;
       }
@@ -254,11 +266,19 @@ export async function registerCommandHandlers(): Promise<void> {
         content: userMessage,
       });
 
-      // Generar respuesta con OpenRouter
-      const response = await openRouterClient.generateResponseWithRetry(
-        messages.slice(-10), // Últimos 10 mensajes para contexto
-        SYSTEM_PROMPT
-      );
+      // Generar respuesta con Gemini (o OpenRouter como fallback)
+      let response: string;
+      if (config.gemini.apiKey) {
+        response = await geminiClient.generateResponseWithRetry(
+          messages.slice(-10), // Últimos 10 mensajes para contexto
+          SYSTEM_PROMPT
+        );
+      } else {
+        response = await openRouterClient.generateResponseWithRetry(
+          messages.slice(-10),
+          SYSTEM_PROMPT
+        );
+      }
 
       if (!response || !response.trim()) {
         await ctx.reply(

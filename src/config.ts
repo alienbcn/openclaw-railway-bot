@@ -12,7 +12,17 @@ export const config = {
     apiUrl: "https://api.telegram.org",
   },
 
-  // OpenRouter & LLM
+  // Google Gemini (LLM principal)
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || "",
+    baseURL: "https://generativelanguage.googleapis.com",
+    model: process.env.GEMINI_MODEL || "gemini-2.0-flash-exp",
+    maxTokens: Number.parseInt(process.env.GEMINI_MAX_TOKENS || "2048", 10),
+    temperature: Number.parseFloat(process.env.GEMINI_TEMPERATURE || "0.7"),
+    topP: Number.parseFloat(process.env.GEMINI_TOP_P || "0.95"),
+  },
+
+  // OpenRouter (fallback, opcional)
   openrouter: {
     apiKey: process.env.OPENROUTER_API_KEY || "",
     baseURL: "https://openrouter.ai/api/v1",
@@ -68,8 +78,12 @@ export function validateConfig(): void {
   if (!config.telegram.token) {
     throw new Error("TELEGRAM_BOT_TOKEN no está configurado");
   }
-  if (!config.openrouter.apiKey) {
-    console.warn("OPENROUTER_API_KEY no está configurado - LLM deshabilitado");
+  if (!config.gemini.apiKey && !config.openrouter.apiKey) {
+    console.warn("Ni GEMINI_API_KEY ni OPENROUTER_API_KEY están configurados - LLM deshabilitado");
+  } else if (config.gemini.apiKey) {
+    console.log("✅ Gemini API configurada correctamente");
+  } else if (config.openrouter.apiKey) {
+    console.log("✅ OpenRouter API configurada (fallback)");
   }
   if (!config.serper.apiKey) {
     console.warn("SERPER_API_KEY no está configurado - búsqueda deshabilitada");
