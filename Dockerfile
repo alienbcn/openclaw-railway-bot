@@ -18,15 +18,10 @@ FROM node:22-slim
 
 WORKDIR /app
 
-RUN apt-get update \
-	&& apt-get install -y --no-install-recommends git \
-	&& rm -rf /var/lib/apt/lists/*
-
-COPY .npmrc package*.json ./
-RUN npm install --omit=dev
-
-# Copiar archivos compilados
+# Copiar archivos compilados y node_modules del builder
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
 
 # Variables de entorno requeridas
 ENV NODE_ENV=production
