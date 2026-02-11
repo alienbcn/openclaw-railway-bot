@@ -72,7 +72,7 @@ export class GeminiClient {
         systemPrompt
       );
 
-      const url = `/v1beta/models/${config.gemini.model}:generateContent?key=${this.apiKey}`;
+      const url = `/v1/models/${config.gemini.model}:generateContent?key=${this.apiKey}`;
       console.log("[GEMINI] URL (sin key):", url.replace(/key=.+$/, 'key=***'));
 
       const requestBody: any = {
