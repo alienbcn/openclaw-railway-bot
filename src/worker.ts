@@ -91,6 +91,10 @@ async function cleanupWebhook() {
 async function main() {
   try {
     log.info("🚀 Iniciando openclaw-railway-bot worker...");
+    log.info("📅 Fecha: " + new Date().toISOString());
+    log.info("🌍 Entorno: " + (process.env.NODE_ENV || "development"));
+    log.info("🚂 Railway URL: " + (process.env.RAILWAY_STATIC_URL || "no configurado"));
+    log.info("");
 
     // Limpiar webhook primero
     await cleanupWebhook();

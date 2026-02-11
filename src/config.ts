@@ -75,18 +75,51 @@ export const config = {
 
 // Validar config
 export function validateConfig(): void {
+  console.log("\n🔍 Validando configuración...");
+  console.log("=".repeat(60));
+  
+  // Telegram Bot Token
   if (!config.telegram.token) {
     throw new Error("TELEGRAM_BOT_TOKEN no está configurado");
   }
-  if (!config.gemini.apiKey && !config.openrouter.apiKey) {
-    console.warn("Ni GEMINI_API_KEY ni OPENROUTER_API_KEY están configurados - LLM deshabilitado");
-  } else if (config.gemini.apiKey) {
-    console.log("✅ Gemini API configurada correctamente");
-  } else if (config.openrouter.apiKey) {
-    console.log("✅ OpenRouter API configurada (fallback)");
+  console.log("✅ TELEGRAM_BOT_TOKEN: Configurado (longitud: " + config.telegram.token.length + ")");
+  
+  // Gemini API Key
+  if (config.gemini.apiKey) {
+    console.log("✅ GEMINI_API_KEY: Configurado (longitud: " + config.gemini.apiKey.length + ")");
+  } else {
+    console.log("❌ GEMINI_API_KEY: NO configurado");
   }
+  
+  // OpenRouter API Key
+  if (config.openrouter.apiKey) {
+    console.log("✅ OPENROUTER_API_KEY: Configurado (longitud: " + config.openrouter.apiKey.length + ")");
+  } else {
+    console.log("⚠️  OPENROUTER_API_KEY: NO configurado (fallback deshabilitado)");
+  }
+  
+  // Serper API Key
+  if (config.serper.apiKey) {
+    console.log("✅ SERPER_API_KEY: Configurado (longitud: " + config.serper.apiKey.length + ")");
+  } else {
+    console.log("⚠️  SERPER_API_KEY: NO configurado (búsqueda deshabilitada)");
+  }
+  
+  // Validación de LLM
+  if (!config.gemini.apiKey && !config.openrouter.apiKey) {
+    console.log("=".repeat(60));
+    console.error("\n❌ ERROR CRÍTICO: No hay ningún LLM configurado!");
+    console.error("   Configura al menos una de estas variables:");
+    console.error("   - GEMINI_API_KEY (recomendado)");
+    console.error("   - OPENROUTER_API_KEY (fallback)\n");
+    console.log("=".repeat(60));
+  }
+  
+  console.log("=".repeat(60));
+  console.log("");
+  
   if (!config.serper.apiKey) {
-    console.warn("SERPER_API_KEY no está configurado - búsqueda deshabilitada");
+    console.warn("⚠️  Nota: Sin SERPER_API_KEY, la búsqueda web estará limitada");
   }
   if (config.openclaw.enabled) {
     const configPath = path.isAbsolute(config.openclaw.configPath)

@@ -23,6 +23,9 @@ const log = {
 async function main() {
   try {
     log.info("🚀 Iniciando openclaw-railway-bot");
+    log.info("📅 Fecha: " + new Date().toISOString());
+    log.info("🌍 Entorno: " + (process.env.NODE_ENV || "development"));
+    log.info("");
 
     // Validar configuración
     validateConfig();

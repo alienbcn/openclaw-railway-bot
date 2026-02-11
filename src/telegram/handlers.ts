@@ -14,10 +14,14 @@ interface ConversationMessage {
 
 const conversationContexts: Map<number, ConversationMessage[]> = new Map();
 
+// Deduplicación: almacena los últimos 100 update_ids procesados
+const processedUpdateIds = new Set<number>();
+const MAX_UPDATES_TO_TRACK = 100;
+
 const SYSTEM_PROMPT = `Eres un asistente amable y útil. Responde de manera concisa y clara. 
 Eres capaz de navegar por internet, analizar información y ayudar al usuario con sus preguntas.`;
 
-const BOT_VERSION = "2026-02-11";
+const BOT_VERSION = "2026-02-11.1";
 
 async function replyInChunks(ctx: Context, text: string): Promise<void> {
   const chunks = text.match(/[\s\S]{1,4096}/g) || [text];
@@ -90,12 +94,31 @@ async function handleNewsRequest(ctx: Context): Promise<void> {
 export async function registerCommandHandlers(): Promise<void> {
   const bot = telegramBot.getBot();
 
-  // Middleware para logging de todos los updates
+  // Middleware para deduplicación y logging de todos los updates
   bot.use(async (ctx, next) => {
+    const updateId = ctx.update.update_id;
+    
+    // Verificar si ya procesamos este update
+    if (processedUpdateIds.has(updateId)) {
+      console.log(`[DEDUP] Update ${updateId} ya procesado, ignorando...`);
+      return; // No llamar a next(), simplemente ignorar
+    }
+    
+    // Marcar como procesado
+    processedUpdateIds.add(updateId);
+    
+    // Mantener solo los últimos MAX_UPDATES_TO_TRACK
+    if (processedUpdateIds.size > MAX_UPDATES_TO_TRACK) {
+      const firstId = processedUpdateIds.values().next().value;
+      if (firstId !== undefined) {
+        processedUpdateIds.delete(firstId);
+      }
+    }
+    
     const updateType = ctx.update.message?.text ? "text" : 
                        ctx.update.message?.photo ? "photo" : 
                        ctx.update.callback_query ? "callback" : "other";
-    console.log(`[UPDATE] Tipo: ${updateType}, De: ${ctx.from?.id}, Username: @${ctx.from?.username || "unknown"}`);
+    console.log(`[UPDATE] ID: ${updateId}, Tipo: ${updateType}, De: ${ctx.from?.id}, Username: @${ctx.from?.username || "unknown"}`);
     await next();
   });
 
