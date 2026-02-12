@@ -161,7 +161,8 @@ export class TelegramBot {
         }
       } catch (error) {
         logger.error({ error, chatId }, 'Failed to process message');
-        await ctx.reply('❌ Sorry, I encountered an error processing your message. Please try again.');
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        await ctx.reply(`❌ Error: ${errorMsg}. Revisa los logs.`);
       }
     });
 

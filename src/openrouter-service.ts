@@ -1,10 +1,9 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { CONFIG } from './config.js';
 import { logger } from './logger.js';
 import { CONSTANTS } from './constants.js';
 
 export interface Message {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
@@ -14,15 +13,27 @@ export interface ConversationContext {
   chatId: number;
 }
 
+interface OpenRouterResponse {
+  choices: Array<{
+    message: {
+      content: string;
+      role: string;
+    };
+    finish_reason: string;
+  }>;
+  model: string;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
 export class OpenRouterService {
-  private client: Anthropic;
   private conversations: Map<number, Message[]> = new Map();
 
   constructor() {
-    this.client = new Anthropic({
-      apiKey: CONFIG.openRouter.apiKey,
-      baseURL: CONFIG.openRouter.baseURL,
-    });
+    // No need for client initialization with fetch
   }
 
   getConversation(chatId: number): Message[] {
@@ -32,7 +43,7 @@ export class OpenRouterService {
     return this.conversations.get(chatId)!;
   }
 
-  addMessage(chatId: number, role: 'user' | 'assistant', content: string): void {
+  addMessage(chatId: number, role: 'user' | 'assistant' | 'system', content: string): void {
     const conversation = this.getConversation(chatId);
     conversation.push({ role, content });
 
@@ -52,28 +63,54 @@ export class OpenRouterService {
       this.addMessage(chatId, 'user', userMessage);
       const conversation = this.getConversation(chatId);
 
-      logger.info({ chatId, messageCount: conversation.length }, 'Sending message to Claude');
+      logger.info({ chatId, messageCount: conversation.length }, 'Sending message to OpenRouter');
 
-      const messages: Anthropic.MessageParam[] = conversation.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      }));
+      // Prepare messages in OpenRouter format
+      const messages: Message[] = [];
+      
+      // Add system message if provided
+      if (systemPrompt) {
+        messages.push({
+          role: 'system',
+          content: systemPrompt,
+        });
+      } else {
+        messages.push({
+          role: 'system',
+          content: this.getDefaultSystemPrompt(),
+        });
+      }
 
-      const response = await this.client.messages.create({
-        model: CONFIG.openRouter.model,
-        max_tokens: 4096,
-        system: systemPrompt || this.getDefaultSystemPrompt(),
-        messages,
+      // Add conversation history
+      messages.push(...conversation);
+
+      const response = await fetch(`${CONFIG.openRouter.baseURL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${CONFIG.openRouter.apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://github.com/alienbcn/openclaw-railway-bot',
+          'X-Title': 'OpenClaw Railway Bot',
+        },
+        body: JSON.stringify({
+          model: CONFIG.openRouter.model,
+          messages: messages,
+          max_tokens: 4096,
+        }),
       });
 
-      const assistantMessage = response.content
-        .filter((block) => block.type === 'text')
-        .map((block) => ('text' in block ? block.text : ''))
-        .join('\n');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        logger.error({ status: response.status, error: errorData }, 'OpenRouter API error');
+        throw new Error(`OpenRouter API error: ${response.status} ${JSON.stringify(errorData)}`);
+      }
+
+      const data = await response.json() as OpenRouterResponse;
+      const assistantMessage = data.choices?.[0]?.message?.content || 'No response from AI';
 
       this.addMessage(chatId, 'assistant', assistantMessage);
 
-      logger.info({ chatId, responseLength: assistantMessage.length }, 'Received response from Claude');
+      logger.info({ chatId, responseLength: assistantMessage.length }, 'Received response from OpenRouter');
 
       return assistantMessage;
     } catch (error) {
