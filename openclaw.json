@@ -1,0 +1,38 @@
+{
+  "identity": {
+    "name": "OpenClaw",
+    "theme": "helpful assistant",
+    "emoji": ":lobster:"
+  },
+  "agents": {
+    "defaults": {
+      "workspace": "./.openclaw/workspace",
+      "model": {
+        "primary": "openrouter/anthropic/claude-3.5-sonnet"
+      }
+    }
+  },
+  "tools": {
+    "profile": "minimal",
+    "allow": ["group:web"],
+    "web": {
+      "search": {
+        "enabled": true,
+        "provider": "brave",
+        "apiKey": "${BRAVE_API_KEY}",
+        "maxResults": 5,
+        "timeoutSeconds": 30,
+        "cacheTtlMinutes": 15
+      },
+      "fetch": {
+        "enabled": true,
+        "maxChars": 50000,
+        "timeoutSeconds": 30,
+        "cacheTtlMinutes": 15
+      }
+    }
+  },
+  "env": {
+    "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
+  }
+}
